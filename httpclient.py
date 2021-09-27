@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Do not use urllib's HTTP GET and POST mechanisms.
+# Do not use urllib"s HTTP GET and POST mechanisms.
 # Write your own HTTP GET and POST
 # The point is to understand what you have to send and get experience with it
 
@@ -42,18 +42,18 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        return int(data.split('\r\n')[0].split(' ')[1])
+        return int(data.split("\r\n")[0].split(" ")[1])
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return data[data.find('\r\n\r\n'):]
+        return data[data.find("\r\n\r\n"):]
     
     def is_remote_IP(self, url):
-        url = url.strip('https://')
-        url = url.strip('http://')
-        url = url[:url.find('/')]
+        url = url.strip("https://")
+        url = url.strip("http://")
+        url = url[:url.find("/")]
         for char in url:
             if char.isalpha():
                 return False
@@ -62,18 +62,18 @@ class HTTPClient(object):
     def get_host(self, url):
         netloc = urllib.parse.urlparse(url).netloc
         if self.is_remote_IP(url):
-            return netloc[:netloc.find(':')]
+            return netloc[:netloc.find(":")]
         return netloc
         
 
     def get_port(self, url):
         netloc = urllib.parse.urlparse(url).netloc
         if self.is_remote_IP(url):
-            return int(netloc[netloc.find(':')+1:])
+            return int(netloc[netloc.find(":")+1:])
         return 80
     
     def sendall(self, data):
-        self.socket.sendall(data.encode('utf-8'))
+        self.socket.sendall(data.encode("utf-8"))
         
     def close(self):
         self.socket.close()
@@ -88,7 +88,7 @@ class HTTPClient(object):
                 buffer.extend(part)
             else:
                 done = not part
-        return buffer.decode('utf-8')
+        return buffer.decode("utf-8")
 
     def GET(self, url, args=None):
         code = 500
@@ -101,7 +101,7 @@ class HTTPClient(object):
         if path == "":
             path = "/"
 
-        payload = f'GET {path} HTTP/1.0\r\nHost: {host}\r\n\r\n'
+        payload = f"GET {path} HTTP/1.0\r\nHost: {host}\r\n\r\n"
         self.connect(host, port)
         self.sendall(payload)
         
@@ -128,13 +128,13 @@ class HTTPClient(object):
         body = ""
         if args:
             for i,key in enumerate(args):
-                body_addition = f'{key}={args[key]}'
+                body_addition = f"{key}={args[key]}"
                 if not (i == len(args)-1):
-                    body_addition += '&'
+                    body_addition += "&"
                 body += body_addition
         
         content_length = len(body)
-        payload = f'POST {path} HTTP/1.0\r\nHost: {host}\r\nContent-length: {content_length}\r\n\r\n{body}'
+        payload = f"POST {path} HTTP/1.0\r\nHost: {host}\r\nContent-length: {content_length}\r\n\r\n{body}"
         self.sendall(payload)
         
         data = self.recvall(self.socket)
