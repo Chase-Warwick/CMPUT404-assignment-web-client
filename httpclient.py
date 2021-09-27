@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
-# Copyright 2016 Abram Hindle, https://github.com/tywtyw2002, and https://github.com/treedust
+# Copyright 2016 Abram Hindle, https://github.com/tywtyw2002, https://github.com/treedust, and Chase Warwick
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,23 +31,46 @@ class HTTPResponse(object):
     def __init__(self, code=200, body=""):
         self.code = code
         self.body = body
+    def __repr__(self):
+        return f"Status Code: {self.code}\nResponse Body:\n{self.body}"
+
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
-
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
         return None
 
     def get_code(self, data):
-        return None
+        return int(data.split('\r\n')[0].split(' ')[1])
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return None
+        return data[data.find('\r\n\r\n'):]
+    
+    def is_remote_IP(self, url):
+        url = url.strip('https://')
+        url = url.strip('http://')
+        url = url[:url.find('/')]
+        for char in url:
+            if char.isalpha():
+                return False
+        return True
+
+    def get_host(self, url):
+        netloc = urllib.parse.urlparse(url).netloc
+        if self.is_remote_IP(url):
+            return netloc[:netloc.find(':')]
+        return netloc
+        
+
+    def get_port(self, url):
+        netloc = urllib.parse.urlparse(url).netloc
+        if self.is_remote_IP(url):
+            return int(netloc[netloc.find(':')+1:])
+        return 80
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
@@ -70,12 +93,56 @@ class HTTPClient(object):
     def GET(self, url, args=None):
         code = 500
         body = ""
+        
+        host = self.get_host(url)
+        port = self.get_port(url)
+        path = urllib.parse.urlparse(url).path
+
+        if path == "":
+            path = "/"
+
+        payload = f'GET {path} HTTP/1.0\r\nHost: {host}\r\n\r\n'
+        self.connect(host, port)
+        self.sendall(payload)
+        
+        data = self.recvall(self.socket)
+        self.close()
+
+        code = self.get_code(data)
+        body = self.get_body(data)
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
         code = 500
         body = ""
+        
+        host = self.get_host(url)
+        port = self.get_port(url)
+        path = urllib.parse.urlparse(url).path
+
+        if path == "":
+            path = "/"
+
+        self.connect(host, port)
+
+        body = ""
+        if args:
+            for i,key in enumerate(args):
+                body_addition = f'{key}={args[key]}'
+                if not (i == len(args)-1):
+                    body_addition += '&'
+                body += body_addition
+        
+        content_length = len(body)
+        payload = f'POST {path} HTTP/1.0\r\nHost: {host}\r\nContent-length: {content_length}\r\n\r\n{body}'
+        self.sendall(payload)
+        
+        data = self.recvall(self.socket)
+        self.close()
+        code = self.get_code(data)
+        body = self.get_body(data)
         return HTTPResponse(code, body)
+
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
