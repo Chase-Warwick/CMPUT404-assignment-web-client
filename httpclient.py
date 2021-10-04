@@ -101,7 +101,11 @@ class HTTPClient(object):
         if path == "":
             path = "/"
 
-        payload = f"GET {path} HTTP/1.0\r\nHost: {host}\r\n\r\n"
+        payload = (
+            f"GET {path} HTTP/1.0\r\n" + 
+            f"Host: {host}\r\n" + 
+            f"Accept: */*\r\n" +
+            f"Accept-Charset: UTF-8\r\n\r\n")
         self.connect(host, port)
         self.sendall(payload)
         
@@ -134,7 +138,15 @@ class HTTPClient(object):
                 body += body_addition
         
         content_length = len(body)
-        payload = f"POST {path} HTTP/1.0\r\nHost: {host}\r\nContent-length: {content_length}\r\n\r\n{body}"
+        
+        payload = (
+            f"POST {path} HTTP/1.0\r\nHost: {host}\r\n" +
+            f"Accept: */*\r\n"
+            f"Accept-Charset: UTF-8\r\n"
+            f"Content-type: application/x-www-form-urlencoded\r\n" +
+            f"Content-length: {content_length}\r\n\r\n{body}"
+        )
+
         self.sendall(payload)
         
         data = self.recvall(self.socket)
@@ -149,7 +161,7 @@ class HTTPClient(object):
             return self.POST( url, args )
         else:
             return self.GET( url, args )
-
+            
 def main():
     client = HTTPClient()
     command = "GET"
