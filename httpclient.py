@@ -137,7 +137,7 @@ class HTTPClient(object):
                     body_addition += "&"
                 body += body_addition
         
-        content_length = len(body)
+        content_length = len(body.encode('utf-8'))
         
         payload = (
             f"POST {path} HTTP/1.0\r\nHost: {host}\r\n" +
